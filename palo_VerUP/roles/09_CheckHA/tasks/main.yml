@@ -1,0 +1,8 @@
+  - name: check status
+    paloaltonetworks.panos.panos_facts:
+      provider: '{{ provider }}'
+      gather_subset: ['ha']
+
+  - debug:
+      msg:
+        - "{{ ansible_facts['net_hostname'] }}_HAステータス: {{ ansible_facts['net_ha_localstate'] }}"

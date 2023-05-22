@@ -1,0 +1,8 @@
+  - name: check status
+    paloaltonetworks.panos.panos_facts:
+      provider: '{{ provider }}'
+      gather_subset: ['ha']
+
+  - debug:
+      msg:
+        - "{{ ansible_facts['net_hostname'] }}_OSバージョン: {{ ansible_facts['net_version'] }}"

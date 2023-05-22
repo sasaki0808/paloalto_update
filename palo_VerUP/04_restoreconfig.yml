@@ -1,0 +1,25 @@
+---
+- name: restore config
+  hosts: PA1
+  connection: local
+  gather_facts: false
+
+  tasks:
+  - name: confirm
+    pause: prompt="コンフィグのリストアを開始しますか？ (y/n)"
+    register: yn
+
+  - name: abort
+    fail: msg="nが入力されたため中止します。"
+    when: yn.user_input != 'y'
+    run_once: true
+
+  - name: restore
+    include_role:
+      name: 07_restore
+
+  vars:
+    provider:
+      ip_address: "{{ ip_address }}"
+      username: "{{ username }}"
+      password: "{{ password }}"

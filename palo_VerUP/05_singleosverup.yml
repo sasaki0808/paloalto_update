@@ -1,0 +1,49 @@
+---
+- name: OS Update
+  hosts: PA1
+  connection: local
+  gather_facts: false
+
+  tasks:
+  - debug:
+      msg:
+        - "OSバージョン:{{ nowOSVer }} ==> {{ FinalOSVer }}"
+        - "アップグレードを実行します。"
+
+# ==============================================1段階の塊=============================================
+  - name: confirm
+    pause: prompt="PANOSのアップデートを実施しますか？{{ nowOSVer }} ==> {{ OSVer1 }} (y/n)"
+    register: yn
+
+  - name: abort
+    fail: msg="nが入力されたため中止します。"
+    when: yn.user_input != 'y'
+    run_once: true
+
+  - name: Update_PA2_01
+    include_role:
+      name: 06_OSupgrade
+    vars:
+      - version: '{{ OSVer1 }}'
+# ==============================================1段階の塊=============================================
+# ==============================================2段階の塊=============================================
+  - name: confirm
+    pause: prompt="PANOSのアップデートを実施しますか？{{ OSVer1 }} ==> {{ OSVer2 }} (y/n)"
+    register: yn
+
+  - name: abort
+    fail: msg="nが入力されたため中止します。"
+    when: yn.user_input != 'y'
+    run_once: true
+
+  - name: Update_PA2_01
+    include_role:
+      name: 06_OSupgrade
+    vars:
+      - version: '{{ OSVer2 }}'
+# ==============================================2段階の塊=============================================
+  vars:
+    provider:
+      ip_address: "{{ ip_address }}"
+      username: "{{ username }}"
+      password: "{{ password }}"

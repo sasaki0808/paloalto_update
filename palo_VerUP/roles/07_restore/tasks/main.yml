@@ -1,0 +1,31 @@
+---
+    - debug:
+        msg:
+          - "コンフィグファイル名: {{cfg_file}}"
+
+    - name: confirm
+      pause: prompt="リストアを実行しますか？ (y/n)"
+      register: yn
+
+    - name: abort
+      fail: msg="Aborted!!"
+      when: yn.user_input != 'y'
+      run_once: true
+
+    - name: import configuration
+      paloaltonetworks.panos.panos_import:
+        provider: '{{ provider }}'
+        file: '{{cfg_file}}'
+        category: 'configuration'
+      register: result
+
+    - name: load configuration
+      paloaltonetworks.panos.panos_loadcfg:
+        ip_address: "{{ ip_address }}"
+        password: "{{ password }}"
+        file: '{{result.filename}}'
+        commit: true
+
+    - debug:
+        msg:
+          - "コンフィグのリストアが完了しました。"

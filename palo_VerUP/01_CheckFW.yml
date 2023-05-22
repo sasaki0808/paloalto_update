@@ -1,0 +1,54 @@
+---
+- name: CheckFW
+  hosts: all
+  connection: local
+  gather_facts: False
+
+  tasks:
+  - name: create_newfile
+    ansible.builtin.file:
+      path: "/home/user/Ansible/other/evidence/{{ inventory_hostname }}_{{ evidence_filename }}.txt"
+      state: touch
+
+  - name: GetAPI
+    include_role:
+      name: 01_getAPI
+
+  - name: Checkstate
+    include_role:
+      name: 02_checkstate
+
+  - name: confirm
+    pause: prompt="コンフィグのバックアップを実行しますか？ (y/n)"
+    register: yn
+
+  - name: abort
+    fail: msg="Aborted!!"
+    when: yn.user_input != 'y'
+    run_once: true
+
+  - name: Checkstate
+    include_role:
+      name: 03_exportconfig
+    vars:
+      - timing: before
+
+  # - name: confirm
+  #   pause: prompt="OSバージョンアップに移りますか？(y/n)"
+  #   register: yn
+
+  # - name: abort
+  #   fail: msg="nが入力されたため中止します。"
+  #   when: yn.user_input != 'y'
+  #   run_once: true
+
+  # - name: go next
+  #   import_playbook: 
+  #     name: 02_HAosverup.yml
+
+  vars:
+    provider:
+      ip_address: "{{ ip_address }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+

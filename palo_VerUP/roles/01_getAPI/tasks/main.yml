@@ -1,0 +1,19 @@
+  - name: retrieve api_key
+    paloaltonetworks.panos.panos_api_key:
+      provider: '{{ provider }}'
+    register: "api_key"
+
+  - name: fact
+    set_fact:
+      api_key: "{{ api_key }}"
+
+  - debug:
+      msg: "{{ api_key.api_key }}"
+
+  - name: output
+    blockinfile:
+          path: "/home/user/Ansible/other/evidence/{{ inventory_hostname }}_{{ evidence_filename }}.txt"
+          block: |
+            {{ lookup('pipe','date +%Y') }}年{{ lookup('pipe','date +%m') }}月{{ lookup('pipe','date +%d') }}日{{ lookup('pipe','date +%H') }}：{{ lookup('pipe','date +%M') }}|{{ inventory_hostname }}の事前状態チェック開始
+          insertafter: EOF
+          marker: ""

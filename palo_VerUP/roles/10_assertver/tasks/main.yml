@@ -1,0 +1,17 @@
+  - debug:
+      msg:
+        - "OSのバージョン確認を実施"
+
+  - name: check status
+    paloaltonetworks.panos.panos_facts:
+      provider: '{{ provider }}'
+      gather_subset: ['ha']
+
+  - name: assert
+    assert:
+      that: ansible_facts.net_version  == "{{ version }}"
+      success_msg: "バージョンの一致を確認...OK"
+      fail_msg: 
+        - "機器のOSver:{{ ansible_facts['net_version'] }}"
+        - "想定のOSver:{{ version }}"
+        - "バージョンが一致していません"

@@ -1,0 +1,13 @@
+  - name: Export config.XML
+    paloaltonetworks.panos.panos_export:
+      provider: '{{ provider }}'
+      category: 'configuration'
+      filename: '{{ inventory_hostname }}_{{ timing }}_{{ date }}.xml'
+
+  - name: output
+    blockinfile:
+          path: "/home/user/Ansible/other/evidence/{{ inventory_hostname }}_{{ evidence_filename }}.txt"
+          block: |
+            {{ lookup('pipe','date +%Y') }}年{{ lookup('pipe','date +%m') }}月{{ lookup('pipe','date +%d') }}日{{ lookup('pipe','date +%H') }}：{{ lookup('pipe','date +%M') }}|{{ inventory_hostname }}のコンフィグをエクスポート、ファイル名：{{ inventory_hostname }}_{{ timing }}_{{ date }}.xml
+          insertafter: EOF
+          marker: ""

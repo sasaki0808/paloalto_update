@@ -1,0 +1,83 @@
+  - name: buckup
+    paloaltonetworks.panos.panos_op:
+      provider: '{{ provider }}'
+      cmd: 'save config to Verup_backup_{{ version }}'
+
+  - name: output
+    blockinfile:
+          path: "/home/user/Ansible/other/evidence/{{ inventory_hostname }}_{{ evidence_filename }}.txt"
+          block: |
+            {{ lookup('pipe','date +%Y') }}年{{ lookup('pipe','date +%m') }}月{{ lookup('pipe','date +%d') }}日{{ lookup('pipe','date +%H') }}：{{ lookup('pipe','date +%M') }}|{{ inventory_hostname }}のコンフィグバックアップを実施
+            {{ lookup('pipe','date +%Y') }}年{{ lookup('pipe','date +%m') }}月{{ lookup('pipe','date +%d') }}日{{ lookup('pipe','date +%H') }}：{{ lookup('pipe','date +%M') }}|ファイル名：Verup_backup_{{ version }}
+          insertafter: EOF
+          marker: ""
+
+  - name: Get status
+    paloaltonetworks.panos.panos_facts:
+      provider: '{{ provider }}'
+      gather_subset: ['ha']
+
+  - name: output
+    blockinfile:
+          path: "/home/user/Ansible/other/evidence/{{ inventory_hostname }}_{{ evidence_filename }}.txt"
+          block: |
+            {{ lookup('pipe','date +%Y') }}年{{ lookup('pipe','date +%m') }}月{{ lookup('pipe','date +%d') }}日{{ lookup('pipe','date +%H') }}：{{ lookup('pipe','date +%M') }}|{{ inventory_hostname }}のバージョンアップを実施
+            {{ lookup('pipe','date +%Y') }}年{{ lookup('pipe','date +%m') }}月{{ lookup('pipe','date +%d') }}日{{ lookup('pipe','date +%H') }}：{{ lookup('pipe','date +%M') }}|OSバージョン:{{ ansible_facts['net_version'] }} ==> {{ version }}
+          insertafter: EOF
+          marker: ""
+
+  - debug:
+      msg:
+        - "OSバージョン:{{ ansible_facts['net_version'] }} ==> {{ version }}"
+        - "アップグレードを実行します。"
+
+  # - name: Install target PAN-OS version
+  #   paloaltonetworks.panos.panos_software:
+  #     provider: '{{ provider }}'
+  #     version: '{{ version }}'
+  #     restart: true
+
+  - name: output
+    blockinfile:
+          path: "/home/user/Ansible/other/evidence/{{ inventory_hostname }}_{{ evidence_filename }}.txt"
+          block: |
+            {{ lookup('pipe','date +%Y') }}年{{ lookup('pipe','date +%m') }}月{{ lookup('pipe','date +%d') }}日{{ lookup('pipe','date +%H') }}：{{ lookup('pipe','date +%M') }}|{{ inventory_hostname }}のバージョンアップが完了、再起動開始...
+          insertafter: EOF
+          marker: ""
+
+  - debug:
+      msg:
+        - "アップグレードが完了しました。"
+        - "再起動中..."
+
+  - name: Pause for restart
+    pause:
+      seconds: 5
+
+  - name: Check to see if device is ready
+    paloaltonetworks.panos.panos_op:
+      provider: '{{ provider }}'
+      cmd: 'show chassis-ready'
+    changed_when: false
+    register: result
+    until: result is not failed and (result.stdout | from_json).response.result == 'yes'
+    retries: 30
+    delay: 60
+
+  - name: Get status
+    paloaltonetworks.panos.panos_facts:
+      provider: '{{ provider }}'
+      gather_subset: ['ha']
+  - debug:
+      msg:
+        - "再起動が完了。"
+        - "現在のOSバージョン:{{ ansible_facts['net_version'] }}"
+
+  - name: output
+    blockinfile:
+          path: "/home/user/Ansible/other/evidence/{{ inventory_hostname }}_{{ evidence_filename }}.txt"
+          block: |
+            {{ lookup('pipe','date +%Y') }}年{{ lookup('pipe','date +%m') }}月{{ lookup('pipe','date +%d') }}日{{ lookup('pipe','date +%H') }}：{{ lookup('pipe','date +%M') }}|{{ inventory_hostname }}の再起動が完了。
+            {{ lookup('pipe','date +%Y') }}年{{ lookup('pipe','date +%m') }}月{{ lookup('pipe','date +%d') }}日{{ lookup('pipe','date +%H') }}：{{ lookup('pipe','date +%M') }}|OSバージョン:{{ ansible_facts['net_version'] }}
+          insertafter: EOF
+          marker: ""

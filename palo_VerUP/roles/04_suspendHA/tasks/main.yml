@@ -1,0 +1,45 @@
+  - name: CheckHA
+    paloaltonetworks.panos.panos_facts:
+      provider: '{{ provider }}'
+      gather_subset: ['ha']
+    register: HAStatus
+
+  - debug:
+      msg:
+        - "現在の状態: {{ ansible_facts['net_ha_localstate'] }}"
+        - "HA状態をsuspendに変更します"
+
+  - name: Change HAstatus
+    paloaltonetworks.panos.panos_op:
+      provider: '{{ provider }}'
+      cmd: 'request high-availability state suspend'
+
+  - name: CheckHA
+    paloaltonetworks.panos.panos_facts:
+      provider: '{{ provider }}'
+      gather_subset: ['ha']
+    register: HAStatus
+
+  - name: output
+    blockinfile:
+          path: "/home/user/Ansible/other/evidence/{{ inventory_hostname }}_{{ evidence_filename }}.txt"
+          block: |
+            {{ lookup('pipe','date +%Y') }}年{{ lookup('pipe','date +%m') }}月{{ lookup('pipe','date +%d') }}日{{ lookup('pipe','date +%H') }}：{{ lookup('pipe','date +%M') }}|{{ inventory_hostname }}のサスペンド化処理を実施
+          insertafter: EOF
+          marker: ""
+
+
+  - name: assert
+    assert:
+      that: ansible_facts.net_ha_localstate  == "suspended"
+      success_msg: "suspend化に成功"
+      fail_msg: "suspended化に失敗しています"
+
+  - name: output
+    blockinfile:
+          path: "/home/user/Ansible/other/evidence/{{ inventory_hostname }}_{{ evidence_filename }}.txt"
+          block: |
+            {{ lookup('pipe','date +%Y') }}年{{ lookup('pipe','date +%m') }}月{{ lookup('pipe','date +%d') }}日{{ lookup('pipe','date +%H') }}：{{ lookup('pipe','date +%M') }}|==>成功
+          insertafter: EOF
+          marker: ""
+

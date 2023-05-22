@@ -1,0 +1,35 @@
+  - name: check diskspace
+    paloaltonetworks.panos.panos_op:
+      provider: '{{ provider }}'
+      cmd: 'show system disk-space'
+    register: diskspace
+
+  - name: check status
+    paloaltonetworks.panos.panos_facts:
+      provider: '{{ provider }}'
+      gather_subset: ['ha']
+
+  - name: check HAstatus
+    paloaltonetworks.panos.panos_op:
+      provider: '{{ provider }}'
+      cmd: 'show high-availability state'
+    register: HA
+
+  - debug:
+      msg: "'{{ group_name }}'ディスクスペース"
+      msg: "{{ diskspace.stdout}}"
+
+  - debug:
+      msg:
+        - "ホスト名: {{ ansible_facts['net_hostname'] }}"
+        - "HAモード: {{ ansible_facts['net_ha_localmode'] }}"
+        - "{{ ansible_facts['net_hostname'] }}_HAステータス: {{ ansible_facts['net_ha_localstate'] }}"
+        - "{{ ansible_facts['net_hostname'] }}_OSバージョン: {{ ansible_facts['net_version'] }}"
+
+  - debug:
+      msg: "config_sync: 同期中"
+    when: "'not synchronized' not in HA.stdout"
+
+  - debug:
+      msg: "config_sync: 同期していません"
+    when: "'not synchronized' in HA.stdout"

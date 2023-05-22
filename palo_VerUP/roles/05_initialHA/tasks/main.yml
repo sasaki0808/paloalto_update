@@ -1,0 +1,42 @@
+  - name: show diskspace
+    paloaltonetworks.panos.panos_op:
+      provider: '{{ provider }}'
+      cmd: 'request high-availability state functional'
+    register: sus
+  - debug:
+      msg: '{{ sus.stdout_lines }}'
+      
+  - name: Pause for restart
+    pause:
+      seconds: 30
+
+  - name: Get HAstatus
+    paloaltonetworks.panos.panos_facts:
+      provider: '{{ provider }}'
+      gather_subset: ['ha']
+    register: HAStatus
+  - debug:
+      msg: '{{ HAStatus }}'
+
+
+  - name: Get HAstatus
+    paloaltonetworks.panos.panos_facts:
+      provider: '{{ provider }}'
+      gather_subset: ['ha']
+    register: HAStatus
+    until: HAStatus is not failed and (result.stdout | from_json).response.result == 'yes'
+    retries: 30
+    delay: 60
+
+  - debug:
+      msg: '{{ HAStatus }}'
+
+  - name: Check to see if device is ready
+    paloaltonetworks.panos.panos_op:
+      provider: '{{ provider }}'
+      cmd: 'show chassis-ready'
+    changed_when: false
+    register: result
+    until: result is not failed and (result.stdout | from_json).response.result == 'yes'
+    retries: 30
+    delay: 60
