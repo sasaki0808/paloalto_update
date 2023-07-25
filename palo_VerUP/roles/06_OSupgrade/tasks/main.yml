@@ -1,7 +1,25 @@
+  - name: output
+    blockinfile:
+          path: "/home/user/Ansible/other/evidence/{{ inventory_hostname }}_{{ evidence_filename }}.txt"
+          block: |
+            {{ lookup('pipe','date +%Y') }}年{{ lookup('pipe','date +%m') }}月{{ lookup('pipe','date +%d') }}日{{ lookup('pipe','date +%H') }}：{{ lookup('pipe','date +%M') }}|OSバージョンチェック完了。
+          insertafter: EOF
+          marker: ""
+
+
   - name: buckup
     paloaltonetworks.panos.panos_op:
       provider: '{{ provider }}'
       cmd: 'save config to Verup_backup_{{ version }}'
+
+  - name: output
+    blockinfile:
+          path: "/home/user/Ansible/other/evidence/{{ inventory_hostname }}_{{ evidence_filename }}.txt"
+          block: |
+            {{ lookup('pipe','date +%Y') }}年{{ lookup('pipe','date +%m') }}月{{ lookup('pipe','date +%d') }}日{{ lookup('pipe','date +%H') }}：{{ lookup('pipe','date +%M') }}|{{ inventory_hostname }}内にバックアップを保存 ファイル名：Verup_backup_{{ version }}
+          insertafter: EOF
+          marker: ""
+
 
   - name: output
     blockinfile:

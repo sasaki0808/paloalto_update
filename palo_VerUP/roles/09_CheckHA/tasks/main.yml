@@ -6,3 +6,11 @@
   - debug:
       msg:
         - "{{ ansible_facts['net_hostname'] }}_HAステータス: {{ ansible_facts['net_ha_localstate'] }}"
+
+  - name: output
+    blockinfile:
+          path: "/home/user/Ansible/other/evidence/{{ inventory_hostname }}_{{ evidence_filename }}.txt"
+          block: |
+            {{ lookup('pipe','date +%Y') }}年{{ lookup('pipe','date +%m') }}月{{ lookup('pipe','date +%d') }}日{{ lookup('pipe','date +%H') }}：{{ lookup('pipe','date +%M') }}|HA状態のチェック・・・{{ ansible_facts['net_hostname'] }}_HAステータス: {{ ansible_facts['net_ha_localstate'] }}
+          insertafter: EOF
+          marker: ""

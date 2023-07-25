@@ -12,7 +12,7 @@
 
 # ==============================================1段階の塊=============================================
   - name: confirm
-    pause: prompt="PANOSのアップデートを実施しますか？{{ nowOSVer }} ==> {{ OSVer1 }} (y/n)"
+    pause: prompt="PANOSのアップデートを実施しますか？{{ nowOSVer }} ==> {{ FinalOSVer }} (y/n)"
     register: yn
 
   - name: abort
@@ -23,27 +23,21 @@
   - name: Update_PA2_01
     include_role:
       name: 06_OSupgrade
-    vars:
-      - version: '{{ OSVer1 }}'
-# ==============================================1段階の塊=============================================
-# ==============================================2段階の塊=============================================
-  - name: confirm
-    pause: prompt="PANOSのアップデートを実施しますか？{{ OSVer1 }} ==> {{ OSVer2 }} (y/n)"
-    register: yn
+    with_items:
+      - "{{ Update14 }}"
 
-  - name: abort
-    fail: msg="nが入力されたため中止します。"
-    when: yn.user_input != 'y'
-    run_once: true
-
-  - name: Update_PA2_01
-    include_role:
-      name: 06_OSupgrade
-    vars:
-      - version: '{{ OSVer2 }}'
-# ==============================================2段階の塊=============================================
   vars:
     provider:
       ip_address: "{{ ip_address }}"
       username: "{{ username }}"
       password: "{{ password }}"
+# ----suspend切り替わり----
+    Update14:
+      - OS: '{{ OSVer1_base }}'
+      - OS: '{{ OSVer1_latest }}'
+      - OS: '{{ OSVer2_base }}'
+      - OS: '{{ OSVer2_latest }}'
+      - OS: '{{ OSVer3_base }}'
+      - OS: '{{ OSVer3_latest }}'
+      - OS: '{{ OSVer4_base }}'
+      - OS: '{{ OSVer4_latest }}'
