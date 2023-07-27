@@ -49,11 +49,21 @@
         - "OSバージョン:{{ ansible_facts['net_version'] }} ==> {{ version }}"
         - "アップグレードを実行します。"
 
-  - name: Install target PAN-OS version
+  - name: download base_image
     paloaltonetworks.panos.panos_software:
       provider: '{{ provider }}'
       version: '{{ version }}'
+      install: no
       restart: true
+    when: version in ["10.0.0", "10.1.0", "10.2.0", "11.0.0"]
+
+  - name: Install PAN-OS
+    paloaltonetworks.panos.panos_software:
+      provider: '{{ provider }}'
+      version: '{{ version }}'
+      install: yes
+      restart: true
+    when: version not in ["10.0.0", "10.1.0", "10.2.0", "11.0.0"]
 
   - name: output
     blockinfile:

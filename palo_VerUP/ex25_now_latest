@@ -1,0 +1,72 @@
+---
+- name: OS Update
+  hosts: all
+  connection: local
+  gather_facts: false
+
+  tasks:
+  - name: Create_log
+    ansible.builtin.file:
+      path: "/home/user/Ansible/other/evidence/{{ inventory_hostname }}_{{ evidence_filename }}.txt"
+      state: touch
+
+  - name: output
+    blockinfile:
+          path: "/home/user/Ansible/other/evidence/{{ inventory_hostname }}_{{ evidence_filename }}.txt"
+          block: |
+            {{ lookup('pipe','date +%Y') }}年{{ lookup('pipe','date +%m') }}月{{ lookup('pipe','date +%d') }}日{{ lookup('pipe','date +%H') }}：{{ lookup('pipe','date +%M') }}|OSバージョンアップ作業開始。
+          insertafter: EOF
+          marker: ""
+
+# ==============================================最初の世代合わせ=============================================
+
+  - debug:
+      msg:
+        - "OSバージョン:{{ nowOSVer }} ==> {{ nowOS_latest }}"
+        - "現世代の最新バージョン化を実行します。"
+
+  - name: confirm
+    pause: prompt="OSのアップデートを実施しますか？{{ nowOSVer }} ==> {{ nowOS_latest }}"
+
+  - name: abort
+    fail: msg="nが入力されたため中止します。"
+    when: yn.user_input != 'y'
+    run_once: true
+
+  - name: Suspend_PA2_01
+    include_role:
+      name: 04_suspendHA
+    when: inventory_hostname == 'PA2'
+
+  - name: HAcheck
+    include_role:
+      name: 09_CheckHA
+
+  - name: Vercheck
+    include_role:
+      name: 10_assertver
+    when: inventory_hostname == 'PA2'
+    vars:
+      - version: '{{ nowOSVer }}'
+
+  - name: Update_PA2_01
+    include_role:
+      name: 06_OSupgrade
+    when: 
+    when: inventory_hostname == 'PA2' and version < "10.0.0"
+    vars:
+      - version: '{{ item.OS | default(omit) }}'
+
+  - name: Update_PA2_01
+    include_role:
+      name: 06_OSupgrade10.0
+    when: inventory_hostname == 'PA2' and version >= "10.0.0"
+    vars:
+      - version: '{{ nowOS_latest }}'
+
+  - name: Vercheck
+    include_role:
+      name: 10_assertver
+    when: inventory_hostname == 'PA2'
+    vars:
+      - version: '{{ nowOS_latest }}'

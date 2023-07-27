@@ -5,19 +5,22 @@
   gather_facts: false
 
   tasks:
-  - name: create_newfile
+  - name: Create_log
     ansible.builtin.file:
       path: "/home/user/Ansible/other/evidence/{{ inventory_hostname }}_{{ evidence_filename }}.txt"
       state: touch
 
-  - debug:
-      msg:
-        - "OSバージョン:{{ FinalOSVer }} ==> {{ nowOSVer }}"
-        - "アップグレードを実行します。"
+  - name: output
+    blockinfile:
+          path: "/home/user/Ansible/other/evidence/{{ inventory_hostname }}_{{ evidence_filename }}.txt"
+          block: |
+            {{ lookup('pipe','date +%Y') }}年{{ lookup('pipe','date +%m') }}月{{ lookup('pipe','date +%d') }}日{{ lookup('pipe','date +%H') }}：{{ lookup('pipe','date +%M') }}|OSバージョンアップ作業開始。
+          insertafter: EOF
+          marker: ""
 
 # ==============================================1段階の塊=============================================
   - name: confirm
-    pause: prompt="2号機のダウングレードを実施しますか？{{ OSVer4_latest }} ==> {{ OSVer3_base }} ==> {{ OSVer3_latest }} ==> {{ OSVer2_base }} ==> {{ OSVer2_latest }} (y/n)"
+    pause: prompt="2号機のアップデートを実施しますか？{{ nowOSVer }} ==> {{ OSVer1_base }} ==> {{ OSVer1_latest }} ==> {{ OSVer2_base }} ==> {{ OSVer2_latest }} (y/n)"
     register: yn
 
   - name: abort
@@ -39,16 +42,26 @@
       name: 10_assertver
     when: inventory_hostname == 'PA2'
     vars:
-      - version: '{{ OSVer4_latest }}'
+      - version: '{{ nowOSVer }}'
 
   - name: Update_PA2_01
     include_role:
       name: 06_OSupgrade
-    when: inventory_hostname == 'PA2'
+    when: 
+    when: inventory_hostname == 'PA2' and version < "10.0.0"
     vars:
       - version: '{{ item.OS | default(omit) }}'
     with_items:
-      - "{{ Update43 }}"
+      - "{{ Update12 }}"
+
+  - name: Update_PA2_01
+    include_role:
+      name: 06_OSupgrade10.0
+    when: inventory_hostname == 'PA2' and version >= "10.0.0"
+    vars:
+      - version: '{{ item.OS | default(omit) }}'
+    with_items:
+      - "{{ Update12 }}"
 
   - name: Vercheck
     include_role:
@@ -60,7 +73,7 @@
 # -----------------------------------------------------------------------------
 
   - name: confirm
-    pause: prompt="1号機のダウングレードを実施しますか？ {{ OSVer4_latest }} ==> {{ OSVer3_base }} ==> {{ OSVer3_latest }} ==> {{ OSVer2_base }} ==> {{ OSVer2_latest }}  ==> {{ OSVer1_base }} ==> {{ OSVer1_latest }} ==> {{ nowOSVer_base }} ==> {{ nowOSVer_latest }} (y/n)"
+    pause: prompt="1号機のアップデートを実施しますか？ {{ nowOSVer }} ==> {{ OSVer1_base }} ==> {{ OSVer1_latest }} ==> {{ OSVer2_base }} ==> {{ OSVer2_latest }}  ==> {{ OSVer3_base }} ==> {{ OSVer3_latest }} ==> {{ OSVer4_base }} ==> {{ OSVer4_latest }} (y/n)"
     register: yn
 
   - name: abort
@@ -73,33 +86,37 @@
       name: 04_suspendHA
     when: inventory_hostname == 'PA1'
 
-  - name: Vercheck
-    include_role:
-      name: 10_assertver
-    when: inventory_hostname == 'PA2'
-    vars:
-      - version: '{{ OSVer4_latest }}'
-
-  - name: Update_PA1_01
+  - name: Update_PA2_01
     include_role:
       name: 06_OSupgrade
-    when: inventory_hostname == 'PA1'
+    when: 
+    when: inventory_hostname == 'PA1' and version < "10.0.0"
     vars:
       - version: '{{ item.OS | default(omit) }}'
     with_items:
-      - "{{ Update41 }}"
+      - "{{ Update14 }}"
+
+  - name: Update_PA2_01
+    include_role:
+      name: 06_OSupgrade10.0
+    when: inventory_hostname == 'PA1' and version >= "10.0.0"
+    vars:
+      - version: '{{ item.OS | default(omit) }}'
+    with_items:
+      - "{{ Update14 }}"
+
 
   - name: Vercheck
     include_role:
       name: 10_assertver
     when: inventory_hostname == 'PA1'
     vars:
-      - version: '{{ nowOSver_latest }}'
+      - version: '{{ OSVer4_latest }}'
 
 # ------------------------------------------------------------------------------------------------
 
   - name: confirm
-    pause: prompt="2号機のダウングレードを実施しますか？{{ OSVer2_latest }} ==> {{ OSVer3 }} ==> {{ OSVer3_latest }} ==> {{ OSVer4 }} ==> {{ OSVer4_latest }} (y/n)"
+    pause: prompt="2号機のアップデートを実施しますか？{{ OSVer2_latest }} ==> {{ OSVer3_base }} ==> {{ OSVer3_latest }} ==> {{ OSVer4_base }} ==> {{ OSVer4_latest }} (y/n)"
     register: yn
 
   - name: abort
@@ -116,21 +133,28 @@
     include_role:
       name: 09_CheckHA
 
-  - name: Vercheck
-    include_role:
-      name: 10_assertver
-    when: inventory_hostname == 'PA2'
-    vars:
-      - version: '{{ OSVer2_latest }}'
-
   - name: Update_PA2_01
     include_role:
       name: 06_OSupgrade
-    when: inventory_hostname == 'PA2'
+    when: 
+    when: inventory_hostname == 'PA2' and version < "10.0.0"
     vars:
       - version: '{{ item.OS | default(omit) }}'
     with_items:
-      - "{{ Update21 }}"
+      - "{{ Update34 }}"
+
+  - name: Update_PA2_01
+    include_role:
+      name: 06_OSupgrade10.0
+    when: inventory_hostname == 'PA2' and version >= "10.0.0"
+    vars:
+      - version: '{{ item.OS | default(omit) }}'
+    with_items:
+      - "{{ Update34 }}"
+
+  - name: CheckOSVer
+    include_role:
+      name: 08_CheckOS
 
   - name: Vercheck
     include_role:
@@ -139,9 +163,6 @@
     vars:
       - version: '{{ OSVer4_latest }}'
 
-  - name: CheckOSVer
-    include_role:
-      name: 08_CheckOS
 # ==============================================塊=============================================
 
 
@@ -151,26 +172,26 @@
       username: "{{ username }}"
       password: "{{ password }}"
 # ----suspend切り替わり----
-    Update43:
-      - OS: '{{ OSVer3_base }}'
-      - OS: '{{ OSVer3_latest }}'
+    Update12:
+      - OS: '{{ OSVer1_base }}'
+      - OS: '{{ OSVer1_latest }}'
       - OS: '{{ OSVer2_base }}'
       - OS: '{{ OSVer2_latest }}'
 # ----suspend切り替わり----
-    Update41:
-      - OS: '{{ OSVer3_base }}'
-      - OS: '{{ OSVer3_latest }}'
-      - OS: '{{ OSVer2_base }}'
-      - OS: '{{ OSVer2_latest }}'
+    Update14:
       - OS: '{{ OSVer1_base }}'
       - OS: '{{ OSVer1_latest }}'
-      - OS: '{{ nowOSVer_base }}'
-      - OS: '{{ nowOSVer }}'
+      - OS: '{{ OSVer2_base }}'
+      - OS: '{{ OSVer2_latest }}'
+      - OS: '{{ OSVer3_base }}'
+      - OS: '{{ OSVer3_latest }}'
+      - OS: '{{ OSVer4_base }}'
+      - OS: '{{ OSVer4_latest }}'
 # ----suspend切り替わり----
 
-    Update21:
-      - OS: '{{ OSVer1_base }}'
-      - OS: '{{ OSVer1_latest }}'
-      - OS: '{{ nowOSVer_base }}'
-      - OS: '{{ nowOSVer_latest }}'
+    Update34:
+      - OS: '{{ OSVer3_base }}'
+      - OS: '{{ OSVer3_latest }}'
+      - OS: '{{ OSVer4_base }}'
+      - OS: '{{ OSVer4_latest }}'
       

@@ -2,10 +2,10 @@
 - name: CheckFW
   hosts: all
   connection: local
-  gather_facts: False
+  gather_facts: false
 
   tasks:
-  - name: create_newfile
+  - name: Create_newfile
     ansible.builtin.file:
       path: "/home/user/Ansible/other/evidence/{{ inventory_hostname }}_{{ evidence_filename }}.txt"
       state: touch
@@ -32,19 +32,6 @@
       name: 03_exportconfig
     vars:
       - timing: before
-
-  # - name: confirm
-  #   pause: prompt="OSバージョンアップに移りますか？(y/n)"
-  #   register: yn
-
-  # - name: abort
-  #   fail: msg="nが入力されたため中止します。"
-  #   when: yn.user_input != 'y'
-  #   run_once: true
-
-  # - name: go next
-  #   import_playbook: 
-  #     name: 02_HAosverup.yml
 
   vars:
     provider:

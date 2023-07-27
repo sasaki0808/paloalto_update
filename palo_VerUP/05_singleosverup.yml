@@ -1,43 +1,21 @@
 ---
-- name: OS Update
-  hosts: PA1
-  connection: local
-  gather_facts: false
+- name: now_latest
+  import_playbook: ex25_now_latest
+  when: nowOS_latest is defined
 
-  tasks:
-  - debug:
-      msg:
-        - "OSバージョン:{{ nowOSVer }} ==> {{ FinalOSVer }}"
-        - "アップグレードを実行します。"
+- name: gen4_upgrade
+  import_playbook: ex21_4gen_upgrade
+  when: 4 == vupsedai
 
-# ==============================================1段階の塊=============================================
-  - name: confirm
-    pause: prompt="PANOSのアップデートを実施しますか？{{ nowOSVer }} ==> {{ FinalOSVer }} (y/n)"
-    register: yn
+- name: gen3_upgrade
+  import_playbook: ex22_3gen_upgrade
+  when: 3 == vupsedai
 
-  - name: abort
-    fail: msg="nが入力されたため中止します。"
-    when: yn.user_input != 'y'
-    run_once: true
+- name: gen2_upgrade
+  import_playbook: ex23_2gen_upgrade
+  when: 2 == vupsedai
 
-  - name: Update_PA2_01
-    include_role:
-      name: 06_OSupgrade
-    with_items:
-      - "{{ Update14 }}"
+- name: gen1_upgrade
+  import_playbook: ex24_1gen_upgrade
+  when: 1 == vupsedai
 
-  vars:
-    provider:
-      ip_address: "{{ ip_address }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-# ----suspend切り替わり----
-    Update14:
-      - OS: '{{ OSVer1_base }}'
-      - OS: '{{ OSVer1_latest }}'
-      - OS: '{{ OSVer2_base }}'
-      - OS: '{{ OSVer2_latest }}'
-      - OS: '{{ OSVer3_base }}'
-      - OS: '{{ OSVer3_latest }}'
-      - OS: '{{ OSVer4_base }}'
-      - OS: '{{ OSVer4_latest }}'

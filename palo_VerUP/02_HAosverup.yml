@@ -1,185 +1,21 @@
 ---
-- name: OS Update
-  hosts: all
-  connection: local
-  gather_facts: false
+- name: now_latest
+  import_playbook: ex5_now_latest
+  when: nowOS_latest is defined
 
-  tasks:
-  - name: create_newfile
-    ansible.builtin.file:
-      path: "/home/user/Ansible/other/evidence/{{ inventory_hostname }}_{{ evidence_filename }}.txt"
-      state: touch
+- name: gen4_upgrade
+  import_playbook: ex1_4gen_upgrade
+  when: 4 == vupsedai
 
-  - name: output
-    blockinfile:
-          path: "/home/user/Ansible/other/evidence/{{ inventory_hostname }}_{{ evidence_filename }}.txt"
-          block: |
-            {{ lookup('pipe','date +%Y') }}年{{ lookup('pipe','date +%m') }}月{{ lookup('pipe','date +%d') }}日{{ lookup('pipe','date +%H') }}：{{ lookup('pipe','date +%M') }}|OSバージョンアップ作業開始。
-          insertafter: EOF
-          marker: ""
+- name: gen3_upgrade
+  import_playbook: ex2_3gen_upgrade
+  when: 3 == vupsedai
 
+- name: gen2_upgrade
+  import_playbook: ex3_2gen_upgrade
+  when: 2 == vupsedai
 
-  - debug:
-      msg:
-        - "OSバージョン:{{ nowOSVer }} ==> {{ FinalOSVer }}"
-        - "アップグレードを実行します。"
+- name: gen1_upgrade
+  import_playbook: ex4_1gen_upgrade
+  when: 1 == vupsedai
 
-# ==============================================1段階の塊=============================================
-  - name: confirm
-    pause: prompt="2号機のアップデートを実施しますか？{{ nowOSVer }} ==> {{ OSVer1_base }} ==> {{ OSVer1_latest }} ==> {{ OSVer2_base }} ==> {{ OSVer2_latest }} (y/n)"
-    register: yn
-
-  - name: abort
-    fail: msg="nが入力されたため中止します。"
-    when: yn.user_input != 'y'
-    run_once: true
-
-  - name: Suspend_PA2_01
-    include_role:
-      name: 04_suspendHA
-    when: inventory_hostname == 'PA2'
-
-  - name: HAcheck
-    include_role:
-      name: 09_CheckHA
-
-  # - name: Vercheck
-  #   include_role:
-  #     name: 10_assertver
-  #   when: inventory_hostname == 'PA2'
-  #   vars:
-  #     - version: '{{ nowOSVer }}'
-
-  - name: Update_PA2_01
-    include_role:
-      name: 06_OSupgrade
-    when: inventory_hostname == 'PA2'
-    vars:
-      - version: '{{ item.OS | default(omit) }}'
-    with_items:
-      - "{{ Update12 }}"
-
-  - name: Vercheck
-    include_role:
-      name: 10_assertver
-    when: inventory_hostname == 'PA2'
-    vars:
-      - version: '{{ OSVer2_latest }}'
-
-# -----------------------------------------------------------------------------
-
-  - name: confirm
-    pause: prompt="1号機のアップデートを実施しますか？ {{ nowOSVer }} ==> {{ OSVer1 }} ==> {{ OSVer1_latest }} ==> {{ OSVer2 }} ==> {{ OSVer2_latest }}  ==> {{ OSVer3 }} ==> {{ OSVer3_latest }} ==> {{ OSVer4 }} ==> {{ OSVer4_latest }} (y/n)"
-    register: yn
-
-  - name: abort
-    fail: msg="nが入力されたため中止します。"
-    when: yn.user_input != 'y'
-    run_once: true
-
-  - name: Suspend_PA1_01
-    include_role:
-      name: 04_suspendHA
-    when: inventory_hostname == 'PA1'
-
-  # - name: Vercheck
-  #   include_role:
-  #     name: 10_assertver
-  #   when: inventory_hostname == 'PA2'
-  #   vars:
-  #     - version: '{{ nowOSVer }}'
-
-  - name: Update_PA1_01
-    include_role:
-      name: 06_OSupgrade
-    when: inventory_hostname == 'PA1'
-    vars:
-      - version: '{{ item.OS | default(omit) }}'
-    with_items:
-      - "{{ Update14 }}"
-
-  # - name: Vercheck
-  #   include_role:
-  #     name: 10_assertver
-  #   when: inventory_hostname == 'PA1'
-  #   vars:
-  #     - version: '{{ OSVer1 }}'
-
-# ------------------------------------------------------------------------------------------------
-
-  - name: confirm
-    pause: prompt="2号機のアップデートを実施しますか？{{ OSVer2_latest }} ==> {{ OSVer3 }} ==> {{ OSVer3_latest }} ==> {{ OSVer4 }} ==> {{ OSVer4_latest }} (y/n)"
-    register: yn
-
-  - name: abort
-    fail: msg="nが入力されたため中止します。"
-    when: yn.user_input != 'y'
-    run_once: true
-
-  - name: Suspend_PA2_01
-    include_role:
-      name: 04_suspendHA
-    when: inventory_hostname == 'PA2'
-
-  - name: HAcheck
-    include_role:
-      name: 09_CheckHA
-
-  # - name: Vercheck
-  #   include_role:
-  #     name: 10_assertver
-  #   when: inventory_hostname == 'PA2'
-  #   vars:
-  #     - version: '{{ nowOSVer }}'
-
-  - name: Update_PA2_01
-    include_role:
-      name: 06_OSupgrade
-    when: inventory_hostname == 'PA2'
-    vars:
-      - version: '{{ item.OS | default(omit) }}'
-    with_items:
-      - "{{ Update34 }}"
-
-  # - name: Vercheck
-  #   include_role:
-  #     name: 10_assertver
-  #   when: inventory_hostname == 'PA2'
-  #   vars:
-  #     - version: '{{ OSVer2_latest }}'
-
-  - name: CheckOSVer
-    include_role:
-      name: 08_CheckOS
-# ==============================================塊=============================================
-
-
-  vars:
-    provider:
-      ip_address: "{{ ip_address }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-# ----suspend切り替わり----
-    Update12:
-      - OS: '{{ OSVer1_base }}'
-      - OS: '{{ OSVer1_latest }}'
-      - OS: '{{ OSVer2_base }}'
-      - OS: '{{ OSVer2_latest }}'
-# ----suspend切り替わり----
-    Update14:
-      - OS: '{{ OSVer1_base }}'
-      - OS: '{{ OSVer1_latest }}'
-      - OS: '{{ OSVer2_base }}'
-      - OS: '{{ OSVer2_latest }}'
-      - OS: '{{ OSVer3_base }}'
-      - OS: '{{ OSVer3_latest }}'
-      - OS: '{{ OSVer4_base }}'
-      - OS: '{{ OSVer4_latest }}'
-# ----suspend切り替わり----
-
-    Update34:
-      - OS: '{{ OSVer3_base }}'
-      - OS: '{{ OSVer3_latest }}'
-      - OS: '{{ OSVer4_base }}'
-      - OS: '{{ OSVer4_latest }}'
-      
